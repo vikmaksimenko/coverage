@@ -1,0 +1,126 @@
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Angular Material style sheet -->
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+</head>
+
+<body ng-app="BlankApp" ng-controller="AppCtrl" ng-cloak>
+    <md-content flex layout-padding>
+        <md-card>
+            <md-tabs md-dynamic-height md-border-bottom md-selected="selected">
+                <md-tab label="Login">
+                    <md-content class="md-padding">
+                        <h1 class="md-display-2">Step 1: Login to TestRail</h1>
+                        <form name="loginForm" ng-submit="doLogin()">
+                            <!-- <div layout-gt-xs="row"> -->
+                            <md-input-container class="md-block">
+                                <label>Login</label>
+                                <input required novalidate type="email" name="login" ng-model="login" ng-pattern="/^.+@.+\..+$/" />
+                                <div ng-messages="loginForm.login.$error" role="alert">
+                                    <div ng-message-exp="['required', 'minlength', 'maxlength', 'pattern']">
+                                        Your email must be between 10 and 100 characters long and look like an e-mail address.
+                                    </div>
+                                </div>
+                            </md-input-container>
+                            <md-input-container class="md-block">
+                                <label>Password</label>
+                                <input required novalidate ng-model="password" name="password" type="password">
+                                <div ng-messages="loginForm.password.$error" role="alert">
+                                    <div ng-message-exp="['required']">
+                                        Password is required
+                                    </div>
+                                </div>
+                            </md-input-container>
+                            <div>
+                                <md-button type="submit" class="md-raised md-primary">Submit</md-button>
+                            </div>
+                        </form>
+                    </md-content>
+                </md-tab>
+                <md-tab label="Select Project" ng-disabled="!logedIn">
+                    <md-content class="md-padding">
+                        <h1 class="md-display-2">Step 2: Choose a Project</h1>
+                        <md-select ng-model="project" placeholder="Projects">
+                            <md-option ng-repeat="aProject in projects" value="{{aProject}}">{{aProject}}</md-option>
+                        </md-select>
+                    </md-content>
+                </md-tab>
+                <md-tab label="See Statistic" ng-disabled="project == null">
+                    <md-content class="md-padding">
+                        <h1 class="md-display-2">Step 3: See Statistic</h1>
+                        <div>
+                            <md-button type="submit" class="md-raised md-primary">Download CSV</md-button>
+                        </div>
+                        <canvas id="myChart"></canvas>
+                    </md-content>
+                </md-tab>
+            </md-tabs>
+        </md-card>
+    </md-content>
+    <!-- Angular Material requires Angular.js Libraries -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+    <!-- Angular Material Library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+    <!-- Your application bootstrap  -->
+    <script type="text/javascript">
+    angular.module('BlankApp', ['ngMaterial', 'ngMessages'])
+        .controller('AppCtrl', AppCtrl);
+
+    function AppCtrl($scope) {
+        $scope.selected = 0;
+        $scope.logedIn = false;
+        $scope.project = null;
+
+        $scope.projects = ["proj1", "proj2"];
+
+        $scope.doLogin = function() {
+            $scope.logedIn = true;
+            $scope.selected += 1;
+
+
+            $scope.runChart();
+        };
+
+        $scope.getStatistics = function() {
+
+        };
+
+        $scope.runChart = function() {
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var chart = new Chart(ctx, {
+                // The type of chart we want to create
+                type: 'line',
+
+                // The data for our dataset
+                data: {
+                    labels: ["January", "February", "March", "April", "May", "June", "July"],
+                    datasets: [{
+                        label: "My First dataset",
+                        backgroundColor: 'rgb(255, 99, 132)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        data: [0, 10, 5, 2, 20, 30, 45],
+                    }]
+                },
+
+                // Configuration options go here
+                options: {}
+            });
+        };
+
+
+        // $scope.projects
+
+    }
+    </script>
+    <script type="text/javascript">
+    </script>
+</body>
+
+</html>
