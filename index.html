@@ -1,23 +1,33 @@
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" ng-app="coverage">
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Angular Material style sheet -->
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+    <style>
+    a {
+        text-decoration: none;
+    }
+
+    .error {
+        color: rgb(221, 44, 0);
+        margin: 30px 0 10px 0;
+    }
+    </style>
 </head>
 
-<body ng-app="BlankApp" ng-controller="AppCtrl" ng-cloak>
+<body ng-controller="MainCtrl as mainCtrl" ng-cloak>
     <md-content flex layout-padding>
         <md-card>
-            <md-tabs md-dynamic-height md-border-bottom md-selected="selected">
+            <md-tabs md-dynamic-height md-border-bottom md-selected="mainCtrl.selected">
                 <md-tab label="Login">
                     <md-content class="md-padding">
                         <h1 class="md-display-2">Step 1: Login to TestRail</h1>
-                        <form name="loginForm" ng-submit="doLogin()">
-                            <!-- <div layout-gt-xs="row"> -->
+                        <form name="loginForm" ng-submit="mainCtrl.getProjects()">
                             <md-input-container class="md-block">
                                 <label>Login</label>
-                                <input required novalidate type="email" name="login" ng-model="login" ng-pattern="/^.+@.+\..+$/" />
+                                <input required novalidate type="email" name="login" ng-model="mainCtrl.creds.login" ng-pattern="/^.+@.+\..+$/" />
                                 <div ng-messages="loginForm.login.$error" role="alert">
                                     <div ng-message-exp="['required', 'minlength', 'maxlength', 'pattern']">
                                         Your email must be between 10 and 100 characters long and look like an e-mail address.
@@ -26,34 +36,55 @@
                             </md-input-container>
                             <md-input-container class="md-block">
                                 <label>Password</label>
-                                <input required novalidate ng-model="password" name="password" type="password">
+                                <input required novalidate ng-model="mainCtrl.creds.password" name="password" type="password">
                                 <div ng-messages="loginForm.password.$error" role="alert">
                                     <div ng-message-exp="['required']">
                                         Password is required
                                     </div>
                                 </div>
+                                <div class="error" ng-show="mainCtrl.loginError">
+                                    {{mainCtrl.loginError}}
+                                </div>
                             </md-input-container>
-                            <div>
+                            <div class="container" ng-show="mainCtrl.loading">
+                                <md-progress-linear md-mode="indeterminate"></md-progress-linear>
+                            </div>
+                            <div class="container" ng-hide="mainCtrl.loading">
                                 <md-button type="submit" class="md-raised md-primary">Submit</md-button>
                             </div>
                         </form>
                     </md-content>
                 </md-tab>
-                <md-tab label="Select Project" ng-disabled="!logedIn">
+                <md-tab label="Select Project" ng-disabled="!mainCtrl.projects">
                     <md-content class="md-padding">
                         <h1 class="md-display-2">Step 2: Choose a Project</h1>
-                        <md-select ng-model="project" placeholder="Projects">
-                            <md-option ng-repeat="aProject in projects" value="{{aProject}}">{{aProject}}</md-option>
+                        <md-select ng-model="mainCtrl.projectId" placeholder="Projects" ng-change="mainCtrl.getSections(mainCtrl.projectId)">
+                            <md-option ng-repeat="project in mainCtrl.projects" value="{{project.id}}"><b>{{project.name}}</b> - {{project.announcement}}</md-option>
                         </md-select>
+                        <div class="error" ng-show="mainCtrl.projectsError">
+                            {{mainCtrl.projectsError}}
+                        </div>
+                        <div class="container" ng-show="mainCtrl.loading">
+                            <md-progress-linear md-mode="indeterminate"></md-progress-linear>
+                        </div>
                     </md-content>
                 </md-tab>
-                <md-tab label="See Statistic" ng-disabled="project == null">
+                <md-tab label="See Statistic" ng-disabled="!mainCtrl.statistic">
                     <md-content class="md-padding">
                         <h1 class="md-display-2">Step 3: See Statistic</h1>
-                        <div>
-                            <md-button type="submit" class="md-raised md-primary">Download CSV</md-button>
+                        <div layout>
+                            <div flex="10" layout layout-align="center center">
+                                <span class="md-body-1">Nesting depth</span>
+                            </div>
+                            <md-slider flex md-discrete ng-model="mainCtrl.nesting" step="1" min="1" max="5" aria-label="rating" ng-change="mainCtrl.runChart(mainCtrl.nesting)"></md-slider>
+                            <md-button type="submit" class="md-raised md-primary" ng-click="mainCtrl.generateCSV()">Download CSV</md-button>
                         </div>
-                        <canvas id="myChart"></canvas>
+                        <div layout class="chart" style="position: relative;">
+                            <canvas id="canvas"></canvas>
+                        </div>
+                        <div layout class="chart" style="position: relative;width: 33vw; margin: auto;">
+                            <canvas id="totalCanvas"></canvas>
+                        </div>
                     </md-content>
                 </md-tab>
             </md-tabs>
@@ -68,59 +99,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
-    <!-- Your application bootstrap  -->
-    <script type="text/javascript">
-    angular.module('BlankApp', ['ngMaterial', 'ngMessages'])
-        .controller('AppCtrl', AppCtrl);
-
-    function AppCtrl($scope) {
-        $scope.selected = 0;
-        $scope.logedIn = false;
-        $scope.project = null;
-
-        $scope.projects = ["proj1", "proj2"];
-
-        $scope.doLogin = function() {
-            $scope.logedIn = true;
-            $scope.selected += 1;
-
-
-            $scope.runChart();
-        };
-
-        $scope.getStatistics = function() {
-
-        };
-
-        $scope.runChart = function() {
-            var ctx = document.getElementById('myChart').getContext('2d');
-            var chart = new Chart(ctx, {
-                // The type of chart we want to create
-                type: 'line',
-
-                // The data for our dataset
-                data: {
-                    labels: ["January", "February", "March", "April", "May", "June", "July"],
-                    datasets: [{
-                        label: "My First dataset",
-                        backgroundColor: 'rgb(255, 99, 132)',
-                        borderColor: 'rgb(255, 99, 132)',
-                        data: [0, 10, 5, 2, 20, 30, 45],
-                    }]
-                },
-
-                // Configuration options go here
-                options: {}
-            });
-        };
-
-
-        // $scope.projects
-
-    }
-    </script>
-    <script type="text/javascript">
-    </script>
+    <script src="main.js"></script>
 </body>
 
 </html>
