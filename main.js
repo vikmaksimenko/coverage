@@ -8,7 +8,7 @@ angular.module('coverage', ['ngMaterial', 'ngMessages'])
         mainCtrl.getProjects = function() {
             mainCtrl.loading = true;
             mainCtrl.loginError = null;
-            $http.post("/coverage/get_projects.php", mainCtrl.creds)
+            $http.post("/ec_coverage/get_projects.php", mainCtrl.creds)
                 .then(function(resp) {
                     mainCtrl.projects = resp.data;
                     mainCtrl.loading = false;
@@ -26,7 +26,7 @@ angular.module('coverage', ['ngMaterial', 'ngMessages'])
             var data = angular.copy(mainCtrl.creds);
             data.projectId = projectId;
 
-            $http.post("/coverage/get_statistic.php", data)
+            $http.post("/ec_coverage/get_statistic.php", data)
                 .then(function(resp) {
                     mainCtrl.statistic = resp.data;
                     mainCtrl.loading = false;
